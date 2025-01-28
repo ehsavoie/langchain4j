@@ -4,7 +4,6 @@ import dev.langchain4j.Experimental;
 
 @Experimental
 public enum HttpMethod {
-
     GET,
     POST,
     DELETE

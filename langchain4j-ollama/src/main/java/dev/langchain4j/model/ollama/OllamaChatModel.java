@@ -1,28 +1,5 @@
 package dev.langchain4j.model.ollama;
 
-import dev.langchain4j.agent.tool.ToolSpecification;
-import dev.langchain4j.data.message.AiMessage;
-import dev.langchain4j.data.message.ChatMessage;
-import dev.langchain4j.http.client.HttpClientBuilder;
-import dev.langchain4j.model.chat.Capability;
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.chat.listener.ChatModelListener;
-import dev.langchain4j.model.chat.listener.ChatModelRequest;
-import dev.langchain4j.model.chat.request.ChatRequestParameters;
-import dev.langchain4j.model.chat.request.ResponseFormat;
-import dev.langchain4j.model.chat.response.ChatResponseMetadata;
-import dev.langchain4j.model.ollama.spi.OllamaChatModelBuilderFactory;
-import dev.langchain4j.model.output.Response;
-import dev.langchain4j.model.output.TokenUsage;
-
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
 import static dev.langchain4j.internal.RetryUtils.withRetry;
 import static dev.langchain4j.internal.Utils.getOrDefault;
 import static dev.langchain4j.internal.ValidationUtils.ensureNotBlank;
@@ -40,6 +17,28 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 
+import dev.langchain4j.agent.tool.ToolSpecification;
+import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.http.client.HttpClientBuilder;
+import dev.langchain4j.model.chat.Capability;
+import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.listener.ChatModelListener;
+import dev.langchain4j.model.chat.listener.ChatModelRequest;
+import dev.langchain4j.model.chat.request.ChatRequestParameters;
+import dev.langchain4j.model.chat.request.ResponseFormat;
+import dev.langchain4j.model.chat.response.ChatResponseMetadata;
+import dev.langchain4j.model.ollama.spi.OllamaChatModelBuilderFactory;
+import dev.langchain4j.model.output.Response;
+import dev.langchain4j.model.output.TokenUsage;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * <a href="https://github.com/jmorganca/ollama/blob/main/docs/api.md">Ollama API reference</a>
  * <br>
@@ -55,26 +54,27 @@ public class OllamaChatModel implements ChatLanguageModel {
     private final List<ChatModelListener> listeners;
     private final Set<Capability> supportedCapabilities;
 
-    public OllamaChatModel(HttpClientBuilder httpClientBuilder,
-                           String baseUrl,
-                           String modelName,
-                           Double temperature,
-                           Integer topK,
-                           Double topP,
-                           Double repeatPenalty,
-                           Integer seed,
-                           Integer numPredict,
-                           Integer numCtx,
-                           List<String> stop,
-                           String format,
-                           ResponseFormat responseFormat,
-                           Duration timeout,
-                           Integer maxRetries,
-                           Map<String, String> customHeaders,
-                           Boolean logRequests,
-                           Boolean logResponses,
-                           List<ChatModelListener> listeners,
-                           Set<Capability> supportedCapabilities) {
+    public OllamaChatModel(
+            HttpClientBuilder httpClientBuilder,
+            String baseUrl,
+            String modelName,
+            Double temperature,
+            Integer topK,
+            Double topP,
+            Double repeatPenalty,
+            Integer seed,
+            Integer numPredict,
+            Integer numCtx,
+            List<String> stop,
+            String format,
+            ResponseFormat responseFormat,
+            Duration timeout,
+            Integer maxRetries,
+            Map<String, String> customHeaders,
+            Boolean logRequests,
+            Boolean logResponses,
+            List<ChatModelListener> listeners,
+            Set<Capability> supportedCapabilities) {
 
         if (format != null && responseFormat != null) {
             throw new IllegalStateException("Cant use both 'format' and 'responseFormat' parameters");
@@ -128,7 +128,8 @@ public class OllamaChatModel implements ChatLanguageModel {
     }
 
     @Override
-    public dev.langchain4j.model.chat.response.ChatResponse chat(dev.langchain4j.model.chat.request.ChatRequest request) {
+    public dev.langchain4j.model.chat.response.ChatResponse chat(
+            dev.langchain4j.model.chat.request.ChatRequest request) {
 
         ChatRequestParameters parameters = request.parameters();
         ChatLanguageModel.validate(parameters);
@@ -137,8 +138,7 @@ public class OllamaChatModel implements ChatLanguageModel {
         Response<AiMessage> response = doGenerate(
                 request.messages(),
                 request.toolSpecifications(),
-                getOrDefault(request.responseFormat(), this.responseFormat)
-        );
+                getOrDefault(request.responseFormat(), this.responseFormat));
 
         return dev.langchain4j.model.chat.response.ChatResponse.builder()
                 .aiMessage(response.content())
@@ -154,7 +154,8 @@ public class OllamaChatModel implements ChatLanguageModel {
         return supportedCapabilities;
     }
 
-    private Response<AiMessage> doGenerate(List<ChatMessage> messages, List<ToolSpecification> toolSpecifications, ResponseFormat responseFormat) {
+    private Response<AiMessage> doGenerate(
+            List<ChatMessage> messages, List<ToolSpecification> toolSpecifications, ResponseFormat responseFormat) {
         ChatRequest request = ChatRequest.builder()
                 .model(modelName)
                 .messages(toOllamaMessages(messages))
@@ -171,11 +172,11 @@ public class OllamaChatModel implements ChatLanguageModel {
         try {
             ChatResponse chatResponse = withRetry(() -> client.chat(request), maxRetries);
             Response<AiMessage> response = Response.from(
-                    chatResponse.getMessage().getToolCalls() != null ?
-                            AiMessage.from(toToolExecutionRequests(chatResponse.getMessage().getToolCalls())) :
-                            AiMessage.from(chatResponse.getMessage().getContent()),
-                    new TokenUsage(chatResponse.getPromptEvalCount(), chatResponse.getEvalCount())
-            );
+                    chatResponse.getMessage().getToolCalls() != null
+                            ? AiMessage.from(toToolExecutionRequests(
+                                    chatResponse.getMessage().getToolCalls()))
+                            : AiMessage.from(chatResponse.getMessage().getContent()),
+                    new TokenUsage(chatResponse.getPromptEvalCount(), chatResponse.getEvalCount()));
             onListenResponse(listeners, response, modelListenerRequest, attributes);
 
             return response;
@@ -353,8 +354,7 @@ public class OllamaChatModel implements ChatLanguageModel {
                     logRequests,
                     logResponses,
                     listeners,
-                    supportedCapabilities
-            );
+                    supportedCapabilities);
         }
     }
 }

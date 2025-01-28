@@ -1,5 +1,20 @@
 package dev.langchain4j.model.ollama;
 
+import static dev.langchain4j.http.client.HttpMethod.DELETE;
+import static dev.langchain4j.http.client.HttpMethod.GET;
+import static dev.langchain4j.http.client.HttpMethod.POST;
+import static dev.langchain4j.internal.Utils.copyIfNotNull;
+import static dev.langchain4j.internal.Utils.getOrDefault;
+import static dev.langchain4j.internal.ValidationUtils.ensureNotBlank;
+import static dev.langchain4j.model.ollama.OllamaChatModelListenerUtils.createModelListenerRequest;
+import static dev.langchain4j.model.ollama.OllamaChatModelListenerUtils.onListenError;
+import static dev.langchain4j.model.ollama.OllamaChatModelListenerUtils.onListenRequest;
+import static dev.langchain4j.model.ollama.OllamaChatModelListenerUtils.onListenResponse;
+import static dev.langchain4j.model.ollama.OllamaJsonUtils.getObjectMapper;
+import static dev.langchain4j.model.ollama.OllamaJsonUtils.toObject;
+import static java.lang.Boolean.TRUE;
+import static java.time.Duration.ofSeconds;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
@@ -16,27 +31,11 @@ import dev.langchain4j.model.chat.listener.ChatModelListener;
 import dev.langchain4j.model.chat.listener.ChatModelRequest;
 import dev.langchain4j.model.output.Response;
 import dev.langchain4j.model.output.TokenUsage;
-
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static dev.langchain4j.http.client.HttpMethod.DELETE;
-import static dev.langchain4j.http.client.HttpMethod.GET;
-import static dev.langchain4j.http.client.HttpMethod.POST;
-import static dev.langchain4j.internal.Utils.copyIfNotNull;
-import static dev.langchain4j.internal.Utils.getOrDefault;
-import static dev.langchain4j.internal.ValidationUtils.ensureNotBlank;
-import static dev.langchain4j.model.ollama.OllamaChatModelListenerUtils.createModelListenerRequest;
-import static dev.langchain4j.model.ollama.OllamaChatModelListenerUtils.onListenError;
-import static dev.langchain4j.model.ollama.OllamaChatModelListenerUtils.onListenRequest;
-import static dev.langchain4j.model.ollama.OllamaChatModelListenerUtils.onListenResponse;
-import static dev.langchain4j.model.ollama.OllamaJsonUtils.getObjectMapper;
-import static dev.langchain4j.model.ollama.OllamaJsonUtils.toObject;
-import static java.lang.Boolean.TRUE;
-import static java.time.Duration.ofSeconds;
 
 class OllamaClient {
 
@@ -50,8 +49,11 @@ class OllamaClient {
                 getOrDefault(builder.httpClientBuilder, HttpClientBuilderLoader::loadHttpClientBuilder);
 
         HttpClient httpClient = httpClientBuilder
-                .connectTimeout(getOrDefault(getOrDefault(builder.timeout, httpClientBuilder.connectTimeout()), ofSeconds(10))) // TODO default value
-                .readTimeout(getOrDefault(getOrDefault(builder.timeout, httpClientBuilder.readTimeout()), ofSeconds(60)))
+                .connectTimeout(getOrDefault(
+                        getOrDefault(builder.timeout, httpClientBuilder.connectTimeout()),
+                        ofSeconds(10))) // TODO default value
+                .readTimeout(
+                        getOrDefault(getOrDefault(builder.timeout, httpClientBuilder.readTimeout()), ofSeconds(60)))
                 .build();
 
         if (builder.logRequests != null || builder.logResponses != null) {
@@ -131,17 +133,14 @@ class OllamaClient {
                         Response<String> response = Response.from(
                                 contentBuilder.toString(),
                                 new TokenUsage(
-                                        completionResponse.getPromptEvalCount(),
-                                        completionResponse.getEvalCount()
-                                )
-                        );
+                                        completionResponse.getPromptEvalCount(), completionResponse.getEvalCount()));
                         handler.onComplete(response);
                     }
                 }
 
                 @Override
                 public void onClose() {
-//                    handler.onComplete(); TODO?
+                    //                    handler.onComplete(); TODO?
                 }
 
                 @Override
@@ -154,8 +153,11 @@ class OllamaClient {
         }
     }
 
-    public void streamingChat(ChatRequest request, StreamingResponseHandler<AiMessage> handler,
-                              List<ChatModelListener> listeners, List<ChatMessage> messages) {
+    public void streamingChat(
+            ChatRequest request,
+            StreamingResponseHandler<AiMessage> handler,
+            List<ChatModelListener> listeners,
+            List<ChatMessage> messages) {
 
         ChatModelRequest modelListenerRequest = createModelListenerRequest(request, messages, new ArrayList<>());
         Map<Object, Object> attributes = new ConcurrentHashMap<>();
@@ -186,13 +188,14 @@ class OllamaClient {
                         Response<AiMessage> response = responseBuilder.build();
                         handler.onComplete(response);
 
-                        onListenResponse(listeners, response, modelListenerRequest, attributes); // TODO before or after?
+                        onListenResponse(
+                                listeners, response, modelListenerRequest, attributes); // TODO before or after?
                     }
                 }
 
                 @Override
                 public void onClose() {
-//                    handler.onComplete(); TODO?
+                    //                    handler.onComplete(); TODO?
                 }
 
                 @Override

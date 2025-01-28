@@ -1,23 +1,5 @@
 package dev.langchain4j.model.ollama;
 
-import dev.langchain4j.agent.tool.ToolSpecification;
-import dev.langchain4j.data.message.AiMessage;
-import dev.langchain4j.data.message.ChatMessage;
-import dev.langchain4j.http.client.HttpClientBuilder;
-import dev.langchain4j.model.StreamingResponseHandler;
-import dev.langchain4j.model.chat.Capability;
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
-import dev.langchain4j.model.chat.listener.ChatModelListener;
-import dev.langchain4j.model.chat.request.ResponseFormat;
-import dev.langchain4j.model.ollama.spi.OllamaStreamingChatModelBuilderFactory;
-
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import static dev.langchain4j.internal.Utils.getOrDefault;
 import static dev.langchain4j.internal.ValidationUtils.ensureNotBlank;
 import static dev.langchain4j.internal.ValidationUtils.ensureNotEmpty;
@@ -28,6 +10,23 @@ import static dev.langchain4j.spi.ServiceHelper.loadFactories;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
+
+import dev.langchain4j.agent.tool.ToolSpecification;
+import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.http.client.HttpClientBuilder;
+import dev.langchain4j.model.StreamingResponseHandler;
+import dev.langchain4j.model.chat.Capability;
+import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.chat.listener.ChatModelListener;
+import dev.langchain4j.model.chat.request.ResponseFormat;
+import dev.langchain4j.model.ollama.spi.OllamaStreamingChatModelBuilderFactory;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * <a href="https://github.com/jmorganca/ollama/blob/main/docs/api.md">Ollama API reference</a>
@@ -43,26 +42,26 @@ public class OllamaStreamingChatModel implements StreamingChatLanguageModel {
     private final List<ChatModelListener> listeners;
     private final Set<Capability> supportedCapabilities;
 
-    public OllamaStreamingChatModel(HttpClientBuilder httpClientBuilder,
-                                    String baseUrl,
-                                    String modelName,
-                                    Double temperature,
-                                    Integer topK,
-                                    Double topP,
-                                    Double repeatPenalty,
-                                    Integer seed,
-                                    Integer numPredict,
-                                    Integer numCtx,
-                                    List<String> stop,
-                                    String format,
-                                    ResponseFormat responseFormat,
-                                    Duration timeout,
-                                    Boolean logRequests,
-                                    Boolean logResponses,
-                                    Map<String, String> customHeaders,
-                                    List<ChatModelListener> listeners,
-                                    Set<Capability> supportedCapabilities
-    ) {
+    public OllamaStreamingChatModel(
+            HttpClientBuilder httpClientBuilder,
+            String baseUrl,
+            String modelName,
+            Double temperature,
+            Integer topK,
+            Double topP,
+            Double repeatPenalty,
+            Integer seed,
+            Integer numPredict,
+            Integer numCtx,
+            List<String> stop,
+            String format,
+            ResponseFormat responseFormat,
+            Duration timeout,
+            Boolean logRequests,
+            Boolean logResponses,
+            Map<String, String> customHeaders,
+            List<ChatModelListener> listeners,
+            Set<Capability> supportedCapabilities) {
         if (format != null && responseFormat != null) {
             throw new IllegalStateException("Cant use both 'format' and 'responseFormat' parameters");
         }
@@ -92,7 +91,8 @@ public class OllamaStreamingChatModel implements StreamingChatLanguageModel {
     }
 
     public static OllamaStreamingChatModelBuilder builder() {
-        for (OllamaStreamingChatModelBuilderFactory factory : loadFactories(OllamaStreamingChatModelBuilderFactory.class)) {
+        for (OllamaStreamingChatModelBuilderFactory factory :
+                loadFactories(OllamaStreamingChatModelBuilderFactory.class)) {
             return factory.get();
         }
         return new OllamaStreamingChatModelBuilder();
@@ -114,7 +114,10 @@ public class OllamaStreamingChatModel implements StreamingChatLanguageModel {
     }
 
     @Override
-    public void generate(List<ChatMessage> messages, List<ToolSpecification> toolSpecifications, StreamingResponseHandler<AiMessage> handler) {
+    public void generate(
+            List<ChatMessage> messages,
+            List<ToolSpecification> toolSpecifications,
+            StreamingResponseHandler<AiMessage> handler) {
         ensureNotEmpty(messages, "messages");
 
         ChatRequest request = ChatRequest.builder()
@@ -294,8 +297,7 @@ public class OllamaStreamingChatModel implements StreamingChatLanguageModel {
                     logResponses,
                     customHeaders,
                     listeners,
-                    supportedCapabilities
-            );
+                    supportedCapabilities);
         }
     }
 }

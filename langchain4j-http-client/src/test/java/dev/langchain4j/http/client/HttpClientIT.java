@@ -1,21 +1,5 @@
 package dev.langchain4j.http.client;
 
-import dev.langchain4j.exception.HttpException;
-import dev.langchain4j.http.client.sse.ServerSentEvent;
-import dev.langchain4j.http.client.sse.ServerSentEventListener;
-import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
-import org.mockito.InOrder;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-
 import static dev.langchain4j.http.client.HttpMethod.POST;
 import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,6 +9,21 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
+
+import dev.langchain4j.exception.HttpException;
+import dev.langchain4j.http.client.sse.ServerSentEvent;
+import dev.langchain4j.http.client.sse.ServerSentEventListener;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.mockito.InOrder;
 
 @EnabledIfEnvironmentVariable(named = "OPENAI_API_KEY", matches = ".+")
 public abstract class HttpClientIT {
@@ -44,7 +43,8 @@ public abstract class HttpClientIT {
                     .url("https://api.openai.com/v1/chat/completions")
                     .addHeader("Authorization", "Bearer " + OPENAI_API_KEY)
                     .addHeader("Content-Type", "application/json")
-                    .body("""
+                    .body(
+                            """
                             {
                                 "model": "gpt-4o-mini",
                                 "messages": [
@@ -73,7 +73,8 @@ public abstract class HttpClientIT {
         for (HttpClient client : clients()) {
 
             // given
-            String invalidBody = """
+            String invalidBody =
+                    """
                     {
                         "model": "gpt-4o-mini"
                     }
@@ -114,7 +115,8 @@ public abstract class HttpClientIT {
                     .url("https://api.openai.com/v1/chat/completions")
                     .addHeader("Authorization", "Bearer " + incorrectApiKey)
                     .addHeader("Content-Type", "application/json")
-                    .body("""
+                    .body(
+                            """
                             {
                                 "model": "gpt-4o-mini",
                                 "messages": [
@@ -152,7 +154,8 @@ public abstract class HttpClientIT {
                     .url("https://api.openai.com/v1/chat/completions")
                     .addHeader("Authorization", "Bearer " + OPENAI_API_KEY)
                     .addHeader("Content-Type", "application/json")
-                    .body("""
+                    .body(
+                            """
                             {
                                 "model": "gpt-4o-mini",
                                 "messages": [
@@ -167,8 +170,8 @@ public abstract class HttpClientIT {
                     .build();
 
             // when
-            record StreamingResult(SuccessfulHttpResponse response, List<ServerSentEvent> events, Set<Thread> threads) {
-            }
+            record StreamingResult(
+                    SuccessfulHttpResponse response, List<ServerSentEvent> events, Set<Thread> threads) {}
 
             CompletableFuture<StreamingResult> completableFuture = new CompletableFuture<>();
 
@@ -214,7 +217,9 @@ public abstract class HttpClientIT {
             assertThat(streamingResult.response().body()).isNull();
 
             Assertions.assertThat(streamingResult.events()).isNotEmpty();
-            assertThat(streamingResult.events().stream().map(ServerSentEvent::data).collect(joining("")))
+            assertThat(streamingResult.events().stream()
+                            .map(ServerSentEvent::data)
+                            .collect(joining("")))
                     .contains("Berlin");
 
             assertThat(streamingResult.threads()).hasSize(1);
@@ -239,7 +244,8 @@ public abstract class HttpClientIT {
                     .url("https://api.openai.com/v1/chat/completions")
                     .addHeader("Authorization", "Bearer " + OPENAI_API_KEY)
                     .addHeader("Content-Type", "application/json")
-                    .body("""
+                    .body(
+                            """
                             {
                                 "model": "gpt-4o-mini",
                                 "messages": [
@@ -254,8 +260,8 @@ public abstract class HttpClientIT {
                     .build();
 
             // when
-            record StreamingResult(SuccessfulHttpResponse response, List<ServerSentEvent> events, Set<Thread> threads) {
-            }
+            record StreamingResult(
+                    SuccessfulHttpResponse response, List<ServerSentEvent> events, Set<Thread> threads) {}
 
             CompletableFuture<StreamingResult> completableFuture = new CompletableFuture<>();
 
@@ -301,7 +307,9 @@ public abstract class HttpClientIT {
             assertThat(streamingResult.response().body()).isNull();
 
             Assertions.assertThat(streamingResult.events()).isNotEmpty();
-            assertThat(streamingResult.events().stream().map(ServerSentEvent::data).collect(joining("")))
+            assertThat(streamingResult.events().stream()
+                            .map(ServerSentEvent::data)
+                            .collect(joining("")))
                     .contains("Berlin", "Paris", "\\n\\n");
 
             assertThat(streamingResult.threads()).hasSize(1);
@@ -321,7 +329,8 @@ public abstract class HttpClientIT {
         for (HttpClient client : clients()) {
 
             // given
-            String invalidBody = """
+            String invalidBody =
+                    """
                     {
                         "model": "gpt-4o-mini",
                         "stream": true
@@ -337,8 +346,7 @@ public abstract class HttpClientIT {
                     .build();
 
             // when
-            record StreamingResult(Throwable throwable, Set<Thread> threads) {
-            }
+            record StreamingResult(Throwable throwable, Set<Thread> threads) {}
 
             CompletableFuture<StreamingResult> completableFuture = new CompletableFuture<>();
 
@@ -353,7 +361,8 @@ public abstract class HttpClientIT {
 
                 @Override
                 public void onEvent(ServerSentEvent event) {
-                    completableFuture.completeExceptionally(new IllegalStateException("onEvent() should not be called"));
+                    completableFuture.completeExceptionally(
+                            new IllegalStateException("onEvent() should not be called"));
                 }
 
                 @Override
@@ -364,7 +373,8 @@ public abstract class HttpClientIT {
 
                 @Override
                 public void onClose() {
-                    completableFuture.completeExceptionally(new IllegalStateException("onClose() should not be called"));
+                    completableFuture.completeExceptionally(
+                            new IllegalStateException("onClose() should not be called"));
                 }
             };
             ServerSentEventListener spyListener = spy(listener);
@@ -375,9 +385,9 @@ public abstract class HttpClientIT {
 
             assertThat(streamingResult.throwable())
                     .isExactlyInstanceOf(HttpException.class)
-                    .extracting("statusCode").isEqualTo(400);
-            assertThat(streamingResult.throwable())
-                    .hasMessageContaining("Missing required parameter: 'messages'");
+                    .extracting("statusCode")
+                    .isEqualTo(400);
+            assertThat(streamingResult.throwable()).hasMessageContaining("Missing required parameter: 'messages'");
 
             assertThat(streamingResult.threads()).hasSize(1);
             assertThat(streamingResult.threads().iterator().next()).isNotEqualTo(Thread.currentThread());

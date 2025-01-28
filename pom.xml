@@ -21,6 +21,7 @@
         <module>http-clients/langchain4j-http-client-jdk</module>
         <!-- TODO move to langchain4j-spring repo-->
         <module>http-clients/langchain4j-http-client-spring-restclient</module>
+        <module>http-clients/langchain4j-http-client-restclient</module>
 
         <module>langchain4j-easy-rag</module>
 

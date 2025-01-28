@@ -1,10 +1,9 @@
 package dev.langchain4j.http.client.spring.restclient;
 
 import dev.langchain4j.http.client.HttpClientBuilder;
+import java.time.Duration;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.web.client.RestClient;
-
-import java.time.Duration;
 
 public class SpringRestClientBuilder implements HttpClientBuilder {
 
@@ -58,7 +57,8 @@ public class SpringRestClientBuilder implements HttpClientBuilder {
      * @param createDefaultStreamingRequestExecutor
      * @return
      */
-    public SpringRestClientBuilder createDefaultStreamingRequestExecutor(Boolean createDefaultStreamingRequestExecutor) {
+    public SpringRestClientBuilder createDefaultStreamingRequestExecutor(
+            Boolean createDefaultStreamingRequestExecutor) {
         this.createDefaultStreamingRequestExecutor = createDefaultStreamingRequestExecutor;
         return this;
     }

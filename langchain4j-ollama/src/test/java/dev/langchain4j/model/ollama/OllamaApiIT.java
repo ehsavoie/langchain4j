@@ -1,7 +1,11 @@
 package dev.langchain4j.model.ollama;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.time.Duration;
 import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -9,11 +13,6 @@ import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import java.io.IOException;
-import java.time.Duration;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class OllamaApiIT {
 
@@ -32,9 +31,8 @@ public class OllamaApiIT {
                         .content(recordedRequest.getRequestUrl().toString())
                         .build();
 
-                ChatResponse chatResponse = ChatResponse.builder()
-                        .message(message)
-                        .build();
+                ChatResponse chatResponse =
+                        ChatResponse.builder().message(message).build();
 
                 String jsonBody;
                 try {
@@ -43,9 +41,7 @@ public class OllamaApiIT {
                     throw new RuntimeException(e);
                 }
 
-                return new MockResponse()
-                        .setResponseCode(200)
-                        .setBody(jsonBody);
+                return new MockResponse().setResponseCode(200).setBody(jsonBody);
             }
         };
         mockWebServer.setDispatcher(dispatcher);
@@ -83,7 +79,6 @@ public class OllamaApiIT {
         ChatResponse chatResponse = ollamaClient.chat(ChatRequest.builder().build());
 
         assertThat(chatResponse.getMessage().getContent()).endsWith(mockWebServer.getPort() + "/api/chat");
-
     }
 
     @Test

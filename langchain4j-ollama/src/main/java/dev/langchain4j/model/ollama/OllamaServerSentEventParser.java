@@ -4,7 +4,6 @@ import dev.langchain4j.Experimental;
 import dev.langchain4j.http.client.sse.ServerSentEvent;
 import dev.langchain4j.http.client.sse.ServerSentEventListener;
 import dev.langchain4j.http.client.sse.ServerSentEventParser;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;

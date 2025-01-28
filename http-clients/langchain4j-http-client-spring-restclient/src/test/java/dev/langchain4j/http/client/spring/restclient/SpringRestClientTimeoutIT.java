@@ -2,6 +2,9 @@ package dev.langchain4j.http.client.spring.restclient;
 
 import dev.langchain4j.http.client.HttpClient;
 import dev.langchain4j.http.client.HttpClientTimeoutIT;
+import java.net.SocketTimeoutException;
+import java.time.Duration;
+import java.util.List;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.http.client.JettyClientHttpRequestFactory;
@@ -9,10 +12,6 @@ import org.springframework.http.client.ReactorNettyClientRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
-
-import java.net.SocketTimeoutException;
-import java.time.Duration;
-import java.util.List;
 
 class SpringRestClientTimeoutIT extends HttpClientTimeoutIT {
 
@@ -24,7 +23,8 @@ class SpringRestClientTimeoutIT extends HttpClientTimeoutIT {
                         .readTimeout(readTimeout)
                         .build(),
                 new SpringRestClientBuilder()
-                        .restClientBuilder(RestClient.builder().requestFactory(new HttpComponentsClientHttpRequestFactory()))
+                        .restClientBuilder(
+                                RestClient.builder().requestFactory(new HttpComponentsClientHttpRequestFactory()))
                         .readTimeout(readTimeout)
                         .build(),
                 new SpringRestClientBuilder()
@@ -38,8 +38,7 @@ class SpringRestClientTimeoutIT extends HttpClientTimeoutIT {
                 new SpringRestClientBuilder()
                         .restClientBuilder(RestClient.builder().requestFactory(new SimpleClientHttpRequestFactory()))
                         .readTimeout(readTimeout)
-                        .build()
-        );
+                        .build());
     }
 
     @Override
