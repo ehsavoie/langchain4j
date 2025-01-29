@@ -1,4 +1,4 @@
-package dev.langchain4j.http.spring.restclient;
+package dev.langchain4j.http.jaxrs.restclient;
 
 class SpringRestClientHttpClientIT {
 

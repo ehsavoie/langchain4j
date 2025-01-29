@@ -25,11 +25,16 @@
 
         <dependency>
             <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-http-client-jdk</artifactId>
+            <!--<artifactId>langchain4j-http-client-jdk</artifactId>-->
+            <artifactId>langchain4j-http-client-jaxrs</artifactId>
             <!--            <artifactId>langchain4j-http-client-spring-restclient</artifactId>-->
-            <version>${project.version}</version>
+            <version>1.0.0-alpha2-SNAPSHOT</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.eclipse.parsson</groupId>
+            <artifactId>parsson</artifactId>
+            <version>1.1.7</version>
+        </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
