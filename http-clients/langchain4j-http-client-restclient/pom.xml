@@ -31,6 +31,11 @@
             <artifactId>resteasy-json-p-provider</artifactId>
             <version>6.2.10.Final</version>
         </dependency>
+        <dependency>
+            <groupId>org.eclipse.parsson</groupId>
+            <artifactId>parsson</artifactId>
+            <version>1.1.7</version>
+        </dependency>
         <!--        <dependency>
             <groupId>jakarta.json</groupId>
             <artifactId>jakarta.json-api</artifactId>
@@ -52,6 +57,12 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>ollama</artifactId>
             <scope>test</scope>
         </dependency>
 

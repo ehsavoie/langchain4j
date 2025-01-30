@@ -8,12 +8,15 @@ import dev.langchain4j.http.client.HttpClient;
 import dev.langchain4j.http.client.HttpMethod;
 import dev.langchain4j.http.client.HttpRequest;
 import dev.langchain4j.http.client.SuccessfulHttpResponse;
+import dev.langchain4j.http.client.sse.DefaultServerSentEventParser;
 import dev.langchain4j.http.client.sse.ServerSentEventListener;
 import dev.langchain4j.http.client.sse.ServerSentEventParser;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.ClientRequestContext;
 import jakarta.ws.rs.client.ClientRequestFilter;
+import jakarta.ws.rs.client.ClientResponseContext;
+import jakarta.ws.rs.client.ClientResponseFilter;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.core.Response;
@@ -35,10 +38,13 @@ public class JaxrsRestClientHttpClient implements HttpClient {
 
     public JaxrsRestClientHttpClient(JaxrsRestClientHttpClientBuilder builder) {
         ClientBuilder restClientBuilder = getOrDefault(builder.restClientBuilder(), ClientBuilder.newBuilder());
-        this.restClient = restClientBuilder
-                .connectTimeout(builder.connectTimeout().toMillis(), TimeUnit.MILLISECONDS)
-                .readTimeout(builder.readTimeout().toMillis(), TimeUnit.MILLISECONDS)
-                .build();
+        if (builder.connectTimeout() != null) {
+            restClientBuilder.connectTimeout(builder.connectTimeout().toMillis(), TimeUnit.MILLISECONDS);
+        }
+        if (builder.readTimeout() != null) {
+            restClientBuilder.readTimeout(builder.readTimeout().toMillis(), TimeUnit.MILLISECONDS);
+        }
+        this.restClient = restClientBuilder.build();
     }
 
     public static JaxrsRestClientHttpClientBuilder builder() { // TODO
@@ -80,20 +86,7 @@ public class JaxrsRestClientHttpClient implements HttpClient {
 
     @Override
     public void execute(HttpRequest request, ServerSentEventListener listener) {
-        JaxrsSseEventListener sseEventListener = new JaxrsSseEventListener(listener);
-        ClientRequestFilter filter = new ClientRequestFilter() {
-            @Override
-            public void filter(ClientRequestContext requestContext) throws IOException {
-                for (Map.Entry<String, List<String>> header : request.headers().entrySet()) {
-                    requestContext.getHeaders().add(header.getKey(), header.getValue());
-                }
-            }
-        };
-        try (SseEventSource msgEventSource = SseEventSource.target(
-                        restClient.target(request.url()).register(filter))
-                .build()) {
-            msgEventSource.register(sseEventListener, error -> sseEventListener.onError(error), sseEventListener);
-        }
+        execute(request, new DefaultServerSentEventParser(), listener);
     }
 
     @Override
@@ -111,7 +104,7 @@ public class JaxrsRestClientHttpClient implements HttpClient {
                 }
             }
         };
-        /*ClientResponseFilter responseFilter = new ClientResponseFilter() {
+        ClientResponseFilter responseFilter = new ClientResponseFilter() {
             @Override
             public void filter(ClientRequestContext request, ClientResponseContext response) throws IOException {
                 if (!isSuccessful(response.getStatus())) {
@@ -123,13 +116,17 @@ public class JaxrsRestClientHttpClient implements HttpClient {
                         .headers(response.getHeaders())
                         .build());
             }
-        };*/
-        try (SseEventSource msgEventSource = SseEventSource.target(
-                        restClient.target(request.url()).register(headerRequestFilter))
+        };
+        try (SseEventSource msgEventSource = SseEventSource.target(restClient
+                        .target(request.url())
+                        .register(headerRequestFilter)
+                        //                        .register(responseFilter)
+                        .register(new NdjsonMessageBodyReader()))
                 .build()) {
             msgEventSource.register(sseEventListener, error -> sseEventListener.onError(error), sseEventListener);
             try {
                 msgEventSource.open();
+                listener.onOpen(SuccessfulHttpResponse.builder().statusCode(200).build());
             } catch (IllegalStateException ex) {
                 listener.onError(ex);
             }
