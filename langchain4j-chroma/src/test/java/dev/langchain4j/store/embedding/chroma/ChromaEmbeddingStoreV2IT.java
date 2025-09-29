@@ -27,7 +27,7 @@ class ChromaEmbeddingStoreV2IT extends EmbeddingStoreWithFilteringIT {
 
     @Container
     private static final ChromaDBContainer chroma =
-            new ChromaDBContainer("chromadb/chroma:0.6.0").withExposedPorts(8000);
+            new ChromaDBContainer("chromadb/chroma:1.1.0").withExposedPorts(8000);
 
     EmbeddingStore<TextSegment> embeddingStore = ChromaEmbeddingStore.builder()
             .baseUrl("http://" + chroma.getHost() + ":" + chroma.getFirstMappedPort())

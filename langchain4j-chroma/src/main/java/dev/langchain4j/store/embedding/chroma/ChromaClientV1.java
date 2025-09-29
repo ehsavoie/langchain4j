@@ -1,50 +1,27 @@
 package dev.langchain4j.store.embedding.chroma;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import dev.langchain4j.internal.Utils;
+import dev.langchain4j.store.embedding.chroma.model.AddEmbeddingsRequest;
+import dev.langchain4j.store.embedding.chroma.model.Collection;
+import dev.langchain4j.store.embedding.chroma.model.CreateCollectionRequest;
+import dev.langchain4j.store.embedding.chroma.model.DeleteEmbeddingsRequest;
+import dev.langchain4j.store.embedding.chroma.model.QueryRequest;
+import dev.langchain4j.store.embedding.chroma.model.QueryResponse;
 import java.io.IOException;
 import java.time.Duration;
-import java.util.List;
-import okhttp3.OkHttpClient;
-import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.jackson.JacksonConverterFactory;
 
 class ChromaClientV1 implements ChromaClient {
 
-    private final ChromaApi chromaApi;
+    private final ChromaApiImpl chromaApi;
 
     private ChromaClientV1(Builder builder) {
-        OkHttpClient.Builder httpClientBuilder = new OkHttpClient.Builder()
-                .callTimeout(builder.timeout)
-                .connectTimeout(builder.timeout)
-                .readTimeout(builder.timeout)
-                .writeTimeout(builder.timeout);
+        ChromaHttpClient httpClient = new ChromaHttpClient(
+                Utils.ensureTrailingForwardSlash(builder.baseUrl),
+                builder.timeout,
+                builder.logRequests,
+                builder.logResponses);
 
-        if (builder.logRequests) {
-            httpClientBuilder.addInterceptor(new ChromaRequestLoggingInterceptor());
-        }
-        if (builder.logResponses) {
-            httpClientBuilder.addInterceptor(new ChromaResponseLoggingInterceptor());
-        }
-
-        ObjectMapper objectMapper = new ObjectMapper()
-                .setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
-                .enable(SerializationFeature.INDENT_OUTPUT)
-                .setSerializationInclusion(JsonInclude.Include.NON_NULL)
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(Utils.ensureTrailingForwardSlash(builder.baseUrl))
-                .client(httpClientBuilder.build())
-                .addConverterFactory(JacksonConverterFactory.create(objectMapper))
-                .build();
-
-        this.chromaApi = retrofit.create(ChromaApi.class);
+        this.chromaApi = new ChromaApiImpl(httpClient);
     }
 
     public static class Builder {
@@ -82,13 +59,7 @@ class ChromaClientV1 implements ChromaClient {
     @Override
     public Collection createCollection(CreateCollectionRequest createCollectionRequest) {
         try {
-            Response<Collection> response =
-                    chromaApi.createCollection(createCollectionRequest).execute();
-            if (response.isSuccessful()) {
-                return response.body();
-            } else {
-                throw toException(response);
-            }
+            return chromaApi.createCollection(createCollectionRequest);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -97,13 +68,10 @@ class ChromaClientV1 implements ChromaClient {
     @Override
     public Collection collection(String collectionName) {
         try {
-            Response<Collection> response = chromaApi.collection(collectionName).execute();
-            if (response.isSuccessful()) {
-                return response.body();
-            } else {
-                // if collection is not present, Chroma returns: Status - 500
-                return null;
-            }
+            return chromaApi.collection(collectionName);
+        } catch (RuntimeException e) {
+            // if collection is not present, Chroma returns: Status - 500
+            return null;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -112,13 +80,7 @@ class ChromaClientV1 implements ChromaClient {
     @Override
     public boolean addEmbeddings(String collectionId, AddEmbeddingsRequest addEmbeddingsRequest) {
         try {
-            Response<Boolean> retrofitResponse =
-                    chromaApi.addEmbeddings(collectionId, addEmbeddingsRequest).execute();
-            if (retrofitResponse.isSuccessful()) {
-                return Boolean.TRUE.equals(retrofitResponse.body());
-            } else {
-                throw toException(retrofitResponse);
-            }
+            return chromaApi.addEmbeddings(collectionId, addEmbeddingsRequest);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -127,13 +89,7 @@ class ChromaClientV1 implements ChromaClient {
     @Override
     public QueryResponse queryCollection(String collectionId, QueryRequest queryRequest) {
         try {
-            Response<QueryResponse> retrofitResponse =
-                    chromaApi.queryCollection(collectionId, queryRequest).execute();
-            if (retrofitResponse.isSuccessful()) {
-                return retrofitResponse.body();
-            } else {
-                throw toException(retrofitResponse);
-            }
+            return chromaApi.queryCollection(collectionId, queryRequest);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -142,12 +98,7 @@ class ChromaClientV1 implements ChromaClient {
     @Override
     public void deleteEmbeddings(String collectionId, DeleteEmbeddingsRequest deleteEmbeddingsRequest) {
         try {
-            Response<List<String>> retrofitResponse = chromaApi
-                    .deleteEmbeddings(collectionId, deleteEmbeddingsRequest)
-                    .execute();
-            if (!retrofitResponse.isSuccessful()) {
-                throw toException(retrofitResponse);
-            }
+            chromaApi.deleteEmbeddings(collectionId, deleteEmbeddingsRequest);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -156,17 +107,9 @@ class ChromaClientV1 implements ChromaClient {
     @Override
     public void deleteCollection(String collectionName) {
         try {
-            chromaApi.deleteCollection(collectionName).execute();
+            chromaApi.deleteCollection(collectionName);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private static RuntimeException toException(Response<?> response) throws IOException {
-        int code = response.code();
-        String body = response.errorBody().string();
-
-        String errorMessage = String.format("status code: %s; body: %s", code, body);
-        return new RuntimeException(errorMessage);
     }
 }
